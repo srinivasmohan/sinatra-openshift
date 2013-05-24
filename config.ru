@@ -4,5 +4,7 @@ require './thread-dumper'
 require 'bundler'
 Bundler.require
 
+#Our modular sinatra app class is in app.rb
 require './app.rb'
-run Sinatra::Application
+#Now run the app.
+run SinnerApp.new
