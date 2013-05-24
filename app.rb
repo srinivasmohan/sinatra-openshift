@@ -6,7 +6,7 @@ require 'ohai'
 class SinnerApp < Sinatra::Base
 
   configure do
-
+    set :logging, false 
   end
   get '/' do
     return wrap("<h2>This is a Sinatra test app running on OpenShift</h2><br> Click here for your <a href=\"/ua\">UA/IP info</a>.<br>Click here for <a href=\"/envinfo\">Ohai info</a><br>")
