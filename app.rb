@@ -40,13 +40,15 @@ class SinnerApp < Sinatra::Base
     if sysdata.has_key?('ec2') && sysdata['ec2'].keys.length>0
       ec2info="Instance type #{sysdata['ec2']['instance_type']} (AMI #{sysdata['ec2']['ami_id']}) in AZ #{sysdata['ec2']['placement_availability_zone']}"
     end
-
+    osname=File.exists?("/etc/issue.net") ? File.open("/etc/issue.net").first.chomp : "Unknown"
   return wrap(gentab({
     "OpenShift Guest users"=>guests, 
     "#Users in wheel group(RH admins)"=> sysdata['etc']['group']['wheel']['members'].length,
     "Memory" => ( sysdata.has_key?('memory') && sysdata['memory'].has_key?('total') ? sysdata['memory']['total'] : "Not available"),
     "CPU" => ( sysdata.has_key?('cpu') ? (sysdata['cpu']['total'].to_s + "x #{sysdata['cpu']['0']['model_name']}") : "Not available" ),
-    "EC2 info"=> ec2info}
+    "EC2 info"=> ec2info,
+    "OS info (from /etc/issue*)" => osname 
+  }
     ) ) 
 
   end
