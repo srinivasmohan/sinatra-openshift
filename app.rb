@@ -58,7 +58,7 @@ class SinnerApp < Sinatra::Base
   x.keys.sort.each do |item|
     t+="<tr><td><b>#{item}</b></td><td>#{x[item]}</td></tr>"
   end 
-  return t + "</table><br><hr>Full Ohai (json) at <a href=\"/ohai/full\">Ohai details</a>"
+  return t + "</table><br><br>Full Ohai (json) at <a href=\"/ohai/full\">Ohai details</a>"
   end
 
   def wrap(msg=nil)
@@ -94,6 +94,8 @@ class SinnerApp < Sinatra::Base
 </head>
   <body>
     #{msg}
+    <br><hr>
+    This code is available at <a href="https://github.com/srinivasmohan/sinatra-openshift">Github</a>.
   </body>
 
   </html>
