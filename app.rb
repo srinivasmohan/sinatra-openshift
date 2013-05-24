@@ -3,26 +3,55 @@ require 'rubygems'
 
 require 'sinatra/base'
 require 'ohai'
+require 'json'
 class SinnerApp < Sinatra::Base
 
   configure do
     set :logging, false 
   end
   get '/' do
-    return wrap("<h2>This is a Sinatra test app running on OpenShift</h2><br> Click here for your <a href=\"/ua\">UA/IP info</a>.<br>Click here for <a href=\"/envinfo\">Ohai info</a><br>")
+    return wrap("<h2>This is a Sinatra test app running on OpenShift</h2><br> Click here for your <a href=\"/ua\">UA/IP info</a>.<br>Click here for <a href=\"/ohai/summary\">Ohai summary</a> and <a href=\"/ohai/full\">Ohai details</a><br>")
   end
 
   get '/ua' do
     wrap("<h2>Your browser: #{request.user_agent}</h2><h2>Your (internet) IP address: #{request.ip}</h2>")
   end
 
-  get '/envinfo' do
+  get '/ohai/full' do
     content_type :json
-    return getfromOhai
+    return getfromOhai.to_json
   end 
-  
+
+  get '/ohai/summary' do
+  sysdata=getfromOhai
+  if sysdata.nil?
+    wrap("<h2>Could not fetch info using Ohai!<h2>")
+  end
+  #Find "guest" users... i.e. non-system/redhat users.
+  langs=Array.new
+  sysdata['languages'].keys.sort.each do |x|
+    langs.push([x , sysdata['languages'][x]['version'] ])
+  end
+  guests=0
+  sysdata['etc']['passwd'].keys.sort.each do |userx|
+    guests+=1 if sysdata['etc']['passwd'][userx]['gecos'] =~ /OpenShift guest/    
+  end
+  wheels=sysdata['etc']['group']['wheel']['members'].length
+  mem=sysdata.has_key?('memory') && sysdata['memory'].has_key?('total') ? sysdata['memory']['total'] : "Not available"
+  cpu=sysdata.has_key?('cpu') ? (sysdata['cpu']['total'].to_s + "x #{sysdata['cpu']['0']['model_name']}") : "Not available" 
+  return wrap(gentab({"OpenShift Guest users"=>guests, "#Users in wheel group(RH admins)"=>wheels, "Memory" => mem, "CPU" => cpu}) ) 
+  end
+
+  def gentab(x=Hash.new)
+  t="<h2>Summary from Ohai</h2><br><table><border=1>"
+  x.keys.sort.each do |item|
+    t+="<tr><td><b>#{item}</b></td><td>#{x[item]}</td></tr>"
+  end 
+  return t + "</table><br><hr>Full Ohai (json) at <a href=\"/ohai/full\">Ohai details</a>"
+  end
+
   def wrap(msg=nil)
-  html=<<HTML
+    html=<<HTML
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
@@ -59,12 +88,13 @@ class SinnerApp < Sinatra::Base
   </html>
 HTML
   return html
-  end 
+end 
 
   def getfromOhai
     thissys=Ohai::System.new
     thissys.all_plugins
-    return thissys.to_json
+    return JSON.parse(thissys.to_json)
   end
-  run! if app_file == $0
+
+run! if app_file == $0
 end
