@@ -1,4 +1,6 @@
 require 'rubygems'
+require './thread-dumper'
+
 require 'bundler'
 Bundler.require
 
