@@ -23,29 +23,32 @@ class SinnerApp < Sinatra::Base
   end 
 
   get '/ohai/summary' do
-  sysdata=getfromOhai
-  if sysdata.nil?
-    wrap("<h2>Could not fetch info using Ohai!<h2>")
-  end
-  #Find "guest" users... i.e. non-system/redhat users.
-  langs=Array.new
-  sysdata['languages'].keys.sort.each do |x|
+    sysdata=getfromOhai
+    if sysdata.nil?
+      wrap("<h2>Could not fetch info using Ohai!<h2>")
+    end
+    #Find "guest" users... i.e. non-system/redhat users.
+    langs=Array.new
+    sysdata['languages'].keys.sort.each do |x|
     langs.push([x , sysdata['languages'][x]['version'] ])
-  end
-  guests=0
-  sysdata['etc']['passwd'].keys.sort.each do |userx|
-    guests+=1 if sysdata['etc']['passwd'][userx]['gecos'] =~ /OpenShift guest/    
-  end
-  wheels=sysdata['etc']['group']['wheel']['members'].length
-  mem=sysdata.has_key?('memory') && sysdata['memory'].has_key?('total') ? sysdata['memory']['total'] : "Not available"
-  cpu=sysdata.has_key?('cpu') ? (sysdata['cpu']['total'].to_s + "x #{sysdata['cpu']['0']['model_name']}") : "Not available" 
-  ec2info="Dont think this is a EC2 instance"
-  if sysdata.has_key?('ec2') && sysdata['ec2'].keys.length>0
-    ec2info="EC2 instance type #{sysdata['ec2']['instance_type']} (AMI #{sysdata['ec2']['ami_id']}) in AZ #{sysdata['ec2']['placement_availability_zone']}
-    "
-  end
+    end
+    guests=0
+    sysdata['etc']['passwd'].keys.sort.each do |userx|
+      guests+=1 if sysdata['etc']['passwd'][userx]['gecos'] =~ /OpenShift guest/    
+    end
+    ec2info="Dont think this is a EC2 instance"
+    if sysdata.has_key?('ec2') && sysdata['ec2'].keys.length>0
+      ec2info="Instance type #{sysdata['ec2']['instance_type']} (AMI #{sysdata['ec2']['ami_id']}) in AZ #{sysdata['ec2']['placement_availability_zone']}"
+    end
 
-  return wrap(gentab({"OpenShift Guest users"=>guests, "#Users in wheel group(RH admins)"=>wheels, "Memory" => mem, "CPU" => cpu,"EC2 info"=> ec2info}) ) 
+  return wrap(gentab({
+    "OpenShift Guest users"=>guests, 
+    "#Users in wheel group(RH admins)"=> sysdata['etc']['group']['wheel']['members'].length,
+    "Memory" => ( sysdata.has_key?('memory') && sysdata['memory'].has_key?('total') ? sysdata['memory']['total'] : "Not available"),
+    "CPU" => ( sysdata.has_key?('cpu') ? (sysdata['cpu']['total'].to_s + "x #{sysdata['cpu']['0']['model_name']}") : "Not available" ),
+    "EC2 info"=> ec2info}
+    ) ) 
+
   end
 
   def gentab(x=Hash.new)
