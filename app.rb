@@ -39,7 +39,13 @@ class SinnerApp < Sinatra::Base
   wheels=sysdata['etc']['group']['wheel']['members'].length
   mem=sysdata.has_key?('memory') && sysdata['memory'].has_key?('total') ? sysdata['memory']['total'] : "Not available"
   cpu=sysdata.has_key?('cpu') ? (sysdata['cpu']['total'].to_s + "x #{sysdata['cpu']['0']['model_name']}") : "Not available" 
-  return wrap(gentab({"OpenShift Guest users"=>guests, "#Users in wheel group(RH admins)"=>wheels, "Memory" => mem, "CPU" => cpu}) ) 
+  ec2info="Dont think this is a EC2 instance"
+  if sysdata.has_key?('ec2') && sysdata['ec2'].keys.length>0
+    ec2info="EC2 instance type #{sysdata['ec2']['instance_type']} (AMI #{sysdata['ec2']['ami_id']}) in AZ #{sysdata['ec2']['placement_availability_zone']}
+    "
+  end
+
+  return wrap(gentab({"OpenShift Guest users"=>guests, "#Users in wheel group(RH admins)"=>wheels, "Memory" => mem, "CPU" => cpu,"EC2 info"=> ec2info}) ) 
   end
 
   def gentab(x=Hash.new)
